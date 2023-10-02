@@ -1,0 +1,12 @@
+<launch>
+    <!-- <node pkg="tf" type="static_transform_publisher" name="camera_link_broadcaster" args="0 0 0 0 0 0 1 rgb_camera_tcp rgb_camera_link 100" /> -->
+    <include file="$(find azure_kinect_ros_driver)/launch/kinect_rgbd.launch">
+        <arg name="overwrite_robot_description" value="false" />
+        <arg name="depth_mode" default="WFOV_UNBINNED" />
+        <arg name="fps" default="15" />
+        <arg name="color_resolution" default="720P" />
+        <arg name="point_cloud" default="false" />
+        <!-- Generate a point cloud from depth data. Requires depth_enabled -->
+        <arg name="rgb_point_cloud" default="false" />
+    </include>
+</launch>
