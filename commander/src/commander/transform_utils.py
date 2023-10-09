@@ -2,7 +2,6 @@ from copy import deepcopy
 from typing import List
 
 import numpy as np
-import rospy
 from geometry_msgs.msg import Point, Pose, Quaternion, Transform, Vector3
 from pytransform3d import rotations as tf3d_r
 from pytransform3d import transformations as tf3d_t
@@ -84,7 +83,6 @@ def orient_poses(target_pose: Pose, poses: List[Pose]) -> List[Pose]:
 
 def transform_to_tf(transform: np.ndarray, frame_id: str, name: str) -> Transform:
     tf = Transform()
-    tf.transform.translation = Vector3(*transform[:3, 3])
-    tf.transform.rotation = Quaternion(*tf3d_r.quaternion_from_(transform[:3, 3]))
-
+    tf.translation = Vector3(*transform[:3, 3])
+    tf.rotation = Quaternion(*tf3d_r.quaternion_from_matrix(transform[:3, :3]))
     return tf

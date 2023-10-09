@@ -104,59 +104,46 @@ def project_points_onto_plane(
     return projected_pcd
 
 
-def get_pcd_centroid_transform(pcd: o3d.geometry.PointCloud, plane_model: list) -> np.ndarray:
-    centroid = np.mean(np.asarray(pcd.points), axis=0)
+def get_marker_transformation_matrix(
+    plane_pcd: o3d.geometry.PointCloud, plane_model: np.ndarray
+) -> np.ndarray:
+    centroid = np.mean(np.asarray(plane_pcd.points), axis=0)
+    a, b, c, d = plane_model
+    distance_to_plane = (a * centroid[0] + b * centroid[1] + c * centroid[2] + d) / np.sqrt(
+        a**2 + b**2 + c**2
+    )
+    centroid_on_plane = centroid - distance_to_plane * np.array([a, b, c])
 
+    # Normalize z_axis (normal of the plane)
     z_axis = np.array(plane_model[:3])
     z_axis /= np.linalg.norm(z_axis)
 
-    # Apply PCA to find principal direction
-    centered_points = np.asarray(pcd.points) - centroid
-    _, _, vh = np.linalg.svd(centered_points, full_matrices=True)
-    x_axis = vh[0, :]
+    # Extract the x_axis and y_axis directly from the rotation matrix of the bounding box.
+    bb = plane_pcd.get_minimal_oriented_bounding_box()
+    bb_r = np.asarray(bb.R).copy()
 
-    # Ensure the X-axis is orthogonal to the Z-axis
-    x_axis -= x_axis.dot(z_axis) * z_axis
+    x_axis_candidate = bb_r[:, 0]
+    y_axis_candidate = bb_r[:, 1]
+
+    world_x_axis = np.array([1, 0, 0])
+    angle_x = np.arccos(np.dot(world_x_axis, x_axis_candidate))
+    angle_y = np.arccos(np.dot(world_x_axis, y_axis_candidate))
+
+    if angle_y < angle_x or angle_y < (np.pi - angle_x):
+        x_axis_candidate, y_axis_candidate = y_axis_candidate, x_axis_candidate
+
+    x_axis = x_axis_candidate - np.dot(x_axis_candidate, z_axis) * z_axis
     x_axis /= np.linalg.norm(x_axis)
 
-    # Compute the Y-axis as the cross product of Z and X
     y_axis = np.cross(z_axis, x_axis)
 
-    # Create the rotation matrix
-    rot_matrix = np.array([x_axis, y_axis, z_axis])
+    transformation_matrix = np.eye(4)
+    transformation_matrix[:3, 0] = x_axis
+    transformation_matrix[:3, 1] = y_axis
+    transformation_matrix[:3, 2] = z_axis
+    transformation_matrix[:3, 3] = centroid_on_plane
 
-    # Create the transformation matrix
-    trans_vector = np.expand_dims(centroid, axis=-1)
-    return np.block([[rot_matrix, trans_vector], [0, 0, 0, 1]])
-
-
-def get_square_alignment_transform(pcd: o3d.geometry.PointCloud, plane_model: list) -> np.ndarray:
-    # 1. Compute the centroid of the point cloud
-    centroid = np.mean(np.asarray(pcd.points), axis=0)
-
-    # 2. Set the Z-axis as the plane normal
-    z_axis = np.array(plane_model[:3])
-    z_axis /= np.linalg.norm(z_axis)
-
-    # 3. Use PCA to get the principal direction
-    _, _, vh = np.linalg.svd(np.asarray(pcd.points) - centroid, full_matrices=True)
-
-    # Make this principal direction orthogonal to z_axis
-    x_axis = vh[0, :] - np.dot(vh[0, :], z_axis) * z_axis
-    x_axis /= np.linalg.norm(x_axis)
-
-    # Compute y_axis as the cross product of z_axis and x_axis
-    y_axis = np.cross(z_axis, x_axis)
-
-    # Create the rotation matrix using x_axis, y_axis, and z_axis
-    rot_matrix = np.array([x_axis, y_axis, z_axis])
-
-    # 4. Create the transformation matrix
-    transform = np.eye(4)
-    transform[:3, :3] = rot_matrix.T
-    transform[:3, 3] = centroid
-
-    return transform
+    return transformation_matrix
 
 
 # cv2.namedWindow("find_marker", cv2.WINDOW_NORMAL)
@@ -188,8 +175,7 @@ for _, marker in marker_pcds.items():
     )
     # marker = project_points_onto_plane(marker, plane_model)
 
-    # marker_tf = get_square_alignment_transform(marker, plane_model)
-    marker_tf = get_pcd_centroid_transform(marker, plane_model)
+    marker_tf = get_marker_transformation_matrix(marker, plane_model)
     tf_vis = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1).transform(marker_tf)
 
     o3d.visualization.draw_geometries(

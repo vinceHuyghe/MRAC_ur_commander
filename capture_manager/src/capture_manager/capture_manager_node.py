@@ -7,13 +7,13 @@ import numpy as np
 import open3d as o3d
 import rospy
 from cv_bridge import CvBridge, CvBridgeError
-from capture_manager.srv import CaptureToFile
 from sensor_msgs.msg import Image, PointCloud2
 
+from capture_manager.srv import CaptureToFile  # type: ignore
 from commander.transform_utils import pose_to_transform
 
 
-class KaCaptureManager:
+class CaptureManager:
     OUTPUT_DIR = Path("/home/v/capture")
 
     def __init__(self) -> None:
@@ -48,7 +48,6 @@ class KaCaptureManager:
     def callback(self, rgb, pcd):
         self.latest_rgb = rgb
         self.latest_pcd = pcd
-
 
     def capture_to_file_cb(self, req):
         if self.latest_rgb and self.latest_pcd:
@@ -105,5 +104,5 @@ class KaCaptureManager:
 
 
 if __name__ == "__main__":
-    ka_capture_manager = KaCaptureManager()
-    ka_capture_manager.run()
+    capture_manager = CaptureManager()
+    capture_manager.run()

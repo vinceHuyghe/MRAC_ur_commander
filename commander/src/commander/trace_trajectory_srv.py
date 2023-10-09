@@ -10,7 +10,7 @@ from std_msgs.msg import ColorRGBA, Header
 from urdf_parser_py.urdf import URDF
 from visualization_msgs.msg import Marker, MarkerArray
 
-from commander.srv import TraceTrajectory
+from commander.srv import TraceTrajectory  # type: ignore
 
 NUM_OFF_JOINTS = 6
 
@@ -19,28 +19,28 @@ START_COLOR = ColorRGBA(1.0, 0.0, 0.0, 0.7)
 END_COLOR = ColorRGBA(1.0, 1.0, 0.0, 0.7)
 
 
-def print_kdl_chain(chain: PyKDL.Chain) -> None:
+def kdl_chain_to_str(chain: PyKDL.Chain) -> str:
     chain_str = []
-    chain_str.append('KDL chain:')
+    chain_str.append("KDL chain:")
     for i in range(chain.getNrOfSegments()):
-        chain_str.append(f'{i}: {chain.getSegment(i).getName()}')
+        chain_str.append(f"{i}: {chain.getSegment(i).getName()}")
 
-    return ','.join(chain_str)
+    return ",".join(chain_str)
 
 
 def get_kdl_fk_solver(
-    base_link: str = 'base_link', tip_link: str = 'tool0'
+    base_link: str = "base_link", tip_link: str = "tool0"
 ) -> Optional[PyKDL.ChainFkSolverPos_recursive]:
     urdf = URDF.from_parameter_server()
     success, tree = treeFromUrdfModel(urdf)
     if not success:
-        rospy.logerr('trajectory tracer: failed to parse urdf')
+        rospy.logerr("trajectory tracer: failed to parse urdf")
         return None
     chain = tree.getChain(base_link, tip_link)
     if chain.getNrOfSegments() == 0:
-        rospy.logerr(f'trajectory tracer: failed to get chain from {base_link} to {tip_link}')
+        rospy.logerr(f"trajectory tracer: failed to get chain from {base_link} to {tip_link}")
         return None
-    rospy.loginfo(f'trajectory tracer: {print_kdl_chain(chain)}')
+    rospy.loginfo(f"trajectory tracer: {kdl_chain_to_str(chain)}")
 
     return PyKDL.ChainFkSolverPos_recursive(chain)
 
@@ -88,10 +88,10 @@ class TrajectoryTracer:
     def __init__(self):
         self.name = rospy.get_name()
 
-        self.marker_pub = rospy.Publisher('/trajectory_trace', MarkerArray, queue_size=1)
+        self.marker_pub = rospy.Publisher("/trajectory_trace", MarkerArray, queue_size=1)
 
         rospy.Service(
-            '/trace_trajectory',
+            "/trace_trajectory",
             TraceTrajectory,
             self.trace_trajectory_callback,
         )
@@ -100,15 +100,15 @@ class TrajectoryTracer:
         self.fk_solver = None
 
     def run(self):
-        rospy.loginfo(f'{self.name}: ready to trace trajectories')
+        rospy.loginfo(f"{self.name}: ready to trace trajectories")
         while not rospy.is_shutdown():
             self.rate.sleep()
 
     def trace_trajectory_callback(self, req):
         self.clear_markers()
 
-        if not rospy.has_param('robot_description'):
-            rospy.logerr(f'{self.name}: robot_description not found')
+        if not rospy.has_param("robot_description"):
+            rospy.logerr(f"{self.name}: robot_description not found")
             return False
 
         if self.end_effector_link != req.end_effector_link:
@@ -121,7 +121,7 @@ class TrajectoryTracer:
         for i, pose in enumerate(req.trajectory.joint_trajectory.points):
             marker = Marker()
             marker.header = Header()
-            marker.header.frame_id = 'base_link'
+            marker.header.frame_id = "base_link"
             marker.header.stamp = rospy.Time.now()
             marker.color = gradient[i]
             marker.id = i
@@ -141,7 +141,7 @@ class TrajectoryTracer:
         marker_array = MarkerArray()
         marker = Marker()
         marker.header = Header()
-        marker.header.frame_id = 'base_link'
+        marker.header.frame_id = "base_link"
         marker.header.stamp = rospy.Time.now()
         marker.action = Marker.DELETEALL
         marker_array.markers.append(marker)
@@ -151,7 +151,7 @@ class TrajectoryTracer:
             rospy.sleep(0.1)
 
 
-if __name__ == '__main__':
-    rospy.init_node('trajectory_tracer', anonymous=True)
+if __name__ == "__main__":
+    rospy.init_node("trajectory_tracer", anonymous=True)
     tracer = TrajectoryTracer()
     tracer.run()

@@ -67,20 +67,16 @@ def color_masked_points_red(
     return colored_pcd
 
 
-pcd = o3d.io.read_point_cloud("/home/v/capture/sam_pcd.ply")
-rgb = cv2.imread("/home/v/capture/sam_rgb.png")
-sam_masks = {"0": cv2.imread("/home/v/capture/mask19.png", cv2.IMREAD_GRAYSCALE)}
+pcd = o3d.io.read_point_cloud("/home/v/capture/log2/0_2023_09_27__13_40_22_pcd.ply")
+rgb = cv2.imread("/home/v/capture/log2/0_2023_09_27__13_40_22_rgb.png")
 
-# print(rgb.shape)
-# print(np.asarray(pcd.points).shape)
+
+
 assert rgb.shape[1] * rgb.shape[0] == len(pcd.points)
 
 
 cv2.namedWindow("mask", cv2.WINDOW_NORMAL)
-# sam_masks = load_masks(Path("/home/v/capture/masks"))
-
-
-
+sam_masks = load_masks(Path("/home/v/capture/log2_masks"))
 
 pcd_np = np.asarray(pcd.points)
 colors_np = np.asarray(pcd.colors)
@@ -93,8 +89,5 @@ for mask_id, mask in sam_masks.items():
 
     masked_pcd = mask_pcd(pcd, mask)
     o3d.visualization.draw_geometries([masked_pcd.remove_non_finite_points()])
-    colored_pcd = color_masked_points_red(pcd, mask)
-    o3d.visualization.draw_geometries([colored_pcd.remove_non_finite_points()])
-
 
 cv2.destroyAllWindows()
