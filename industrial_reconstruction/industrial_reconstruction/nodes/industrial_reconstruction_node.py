@@ -315,6 +315,9 @@ class IndustrialReconstruction(object):
                     depth_image_msg, "16UC1")
                 cv2_rgb_img = self.bridge.imgmsg_to_cv2(
                     rgb_image_msg, rgb_image_msg.encoding)
+                # for kinect azure
+                # rgb_image_msg, 'bgr8')
+                # cv2_rgb_img = cv2_rgb_img[:, :, :3]
             except CvBridgeError:
                 rospy.logerr("Error converting ros msg to cv img")
                 return
