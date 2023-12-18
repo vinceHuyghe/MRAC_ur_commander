@@ -163,7 +163,7 @@ class CommanderNode:
             self.trace_trajectory_service(trajectory[0], self.move_group.get_end_effector_link())
             return PlanSequenceResponse(success=True, configuration_change=configuration_change)
         rospy.loginfo(f"commander: failed to plan sequence: {error_code_to_str(error_code)}")
-        return PlanSequenceResponse(False)
+        return PlanSequenceResponse(False, True)
 
     def execute_trajectory_cb(self, req: ExecuteTrajectory) -> bool:
         if self.trajectory is None:
