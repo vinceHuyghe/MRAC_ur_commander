@@ -85,6 +85,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends\
     ros-$ROS_DISTRO-speed-scaling-state-controller \
     ros-$ROS_DISTRO-velocity-controllers \
     ros-$ROS_DISTRO-effort-controllers \
+    ros-$ROS_DISTRO-rosbridge-suite \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /
